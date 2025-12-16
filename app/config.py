@@ -1,0 +1,1 @@
+HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
