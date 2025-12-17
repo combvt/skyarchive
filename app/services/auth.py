@@ -3,6 +3,8 @@ from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta, datetime, timezone
 from app.models.auth import User
 import jwt
+from sqlalchemy.orm import Session
+from app.db.session import get_session
 
 password_hash = PasswordHash.recommended()
 
@@ -35,5 +37,15 @@ def validate_access_token(token: str) -> int | None:
     return decoded_data["id"]
 
 
-def create_user(username: str, password: str, ):
-    pass
+def create_user(user_name: str, password: str, session_instance: Session) -> User:
+    hashed_password = get_password_hash(password)
+
+    new_user = User(
+        username=user_name,
+        hashed_password=hashed_password
+    )
+
+    session_instance.add(new_user)
+    session_instance.commit()
+
+    return new_user
