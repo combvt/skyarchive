@@ -33,3 +33,7 @@ def validate_access_token(token: str) -> int | None:
     decoded_data = jwt.decode(jwt=token, key=SECRET_KEY, algorithms=[ALGORITHM])
 
     return decoded_data["id"]
+
+
+def create_user(username: str, password: str, ):
+    pass
