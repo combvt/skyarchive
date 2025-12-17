@@ -10,19 +10,13 @@ auth_router = APIRouter(prefix="/auth")
 
 @auth_router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register_user(user_in: UserIn, current_session: Session = Depends(get_session)):
-    statement = select(User.username).where(User.username == user_in.username)
+    user = auth.get_user_by_username(user_in.username, current_session)
 
-    user_username = current_session.execute(statement).scalars().first()
-
-    if user_username:
+    if user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="username already exists.")
 
     created_user = auth.create_user(user_in.username, user_in.password, current_session)
-    user_data = {
-        "id": created_user.id,
-        "username": created_user.username,
-        "created_at": created_user.created_at
-    }
-    return UserOut(**user_data)
+   
+    return created_user
 
 

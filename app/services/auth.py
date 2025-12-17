@@ -4,6 +4,7 @@ from datetime import timedelta, datetime, timezone
 from app.models.auth import User
 import jwt
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 password_hash = PasswordHash.recommended()
 
@@ -34,6 +35,14 @@ def validate_access_token(token: str) -> int | None:
     decoded_data = jwt.decode(jwt=token, key=SECRET_KEY, algorithms=[ALGORITHM])
 
     return decoded_data["id"]
+
+
+def get_user_by_username(username: str, session_instance: Session) -> User | None:
+    stmt = select(User).where(User.username == username)
+
+    user = session_instance.execute(stmt).scalar()
+    
+    return user
 
 
 def create_user(user_name: str, password: str, session_instance: Session) -> User:
