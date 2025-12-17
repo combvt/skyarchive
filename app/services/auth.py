@@ -4,7 +4,6 @@ from datetime import timedelta, datetime, timezone
 from app.models.auth import User
 import jwt
 from sqlalchemy.orm import Session
-from app.db.session import get_session
 
 password_hash = PasswordHash.recommended()
 
@@ -47,5 +46,6 @@ def create_user(user_name: str, password: str, session_instance: Session) -> Use
 
     session_instance.add(new_user)
     session_instance.commit()
+    session_instance.refresh(new_user)
 
     return new_user
