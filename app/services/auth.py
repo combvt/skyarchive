@@ -12,7 +12,7 @@ from jwt.exceptions import PyJWTError
 
 password_hash = PasswordHash.recommended()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_password_hash(password: str) -> str:
@@ -63,7 +63,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session_inst
     stmt = select(User).where(User.id == user_id)
 
     current_user = session_instance.execute(stmt).scalar()
-    
+
     if not current_user:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
     
