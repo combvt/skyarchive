@@ -51,6 +51,24 @@ def get_user_by_username(username: str, session_instance: Session) -> User | Non
     return user
 
 
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session_instance: Session) -> User:
+    try:
+        user_id = validate_access_token(token)
+    except PyJWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+    
+    stmt = select(User).where(User.id == user_id)
+
+    current_user = session_instance.execute(stmt).scalar()
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
+    
+    return current_user
+
 def create_user(user_name: str, password: str, session_instance: Session) -> User:
     hashed_password = get_password_hash(password)
 
