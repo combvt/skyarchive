@@ -1,3 +1,4 @@
+from typing import Annotated
 from pwdlib import PasswordHash
 from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta, datetime, timezone
@@ -5,8 +6,13 @@ from app.models.auth import User
 import jwt
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException
+from jwt.exceptions import PyJWTError
 
 password_hash = PasswordHash.recommended()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def get_password_hash(password: str) -> str:
@@ -31,7 +37,7 @@ def create_access_token(user: User, expires_delta: timedelta | None = None) -> s
     return token
 
 
-def validate_access_token(token: str) -> int | None:
+def validate_access_token(token: str) -> int:
     decoded_data = jwt.decode(jwt=token, key=SECRET_KEY, algorithms=[ALGORITHM])
 
     return decoded_data["id"]
