@@ -28,7 +28,9 @@ def create_access_token(user: User, expires_delta: timedelta | None = None) -> s
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
 
     data_dict["exp"] = expire
 
@@ -47,11 +49,13 @@ def get_user_by_username(username: str, session_instance: Session) -> User | Non
     stmt = select(User).where(User.username == username)
 
     user = session_instance.execute(stmt).scalar()
-    
+
     return user
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session_instance: Session) -> User:
+def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], session_instance: Session
+) -> User:
     try:
         user_id = validate_access_token(token)
     except PyJWTError:
@@ -59,23 +63,21 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session_inst
 
     if not user_id:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
-    
+
     stmt = select(User).where(User.id == user_id)
 
     current_user = session_instance.execute(stmt).scalar()
 
     if not current_user:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
-    
+
     return current_user
+
 
 def create_user(user_name: str, password: str, session_instance: Session) -> User:
     hashed_password = get_password_hash(password)
 
-    new_user = User(
-        username=user_name,
-        hashed_password=hashed_password
-    )
+    new_user = User(username=user_name, hashed_password=hashed_password)
 
     session_instance.add(new_user)
     session_instance.commit()

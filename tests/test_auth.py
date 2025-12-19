@@ -10,18 +10,19 @@ import pytest
 
 client = TestClient(app)
 
-fake_engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+fake_engine = create_engine(
+    "sqlite:///:memory:", connect_args={"check_same_thread": False}
+)
 
 
 Base.metadata.create_all(bind=fake_engine)
-
 
 
 @pytest.fixture
 def override_get_session(db_session):
     def override_dependency():
         return db_session
-    
+
     app.dependency_overrides[get_session] = override_dependency
     yield
     app.dependency_overrides.clear()
@@ -39,14 +40,10 @@ def db_session():
     transaction.close()
 
 
-
 def test_register_success(override_get_session, db_session):
 
-    response = client.post("/auth/register",
-                json={
-                    "username": "Thisisatest",
-                    "password": "testtest123"
-                }
+    response = client.post(
+        "/auth/register", json={"username": "Thisisatest", "password": "testtest123"}
     )
     user = get_user_by_username("Thisisatest", db_session)
 
@@ -56,37 +53,29 @@ def test_register_success(override_get_session, db_session):
     assert verify_password("testtest123", user.hashed_password) == True
 
 
-
 def test_register_duplicate_username(override_get_session, db_session):
 
     create_user("yohellothere", "justatest", db_session)
 
-
     response = client.post(
-                "/auth/register",
-                json={
-                    "username": "yohellothere",
-                    "password": "hihowareyou"
-                }
+        "/auth/register", json={"username": "yohellothere", "password": "hihowareyou"}
     )
-   
+
     assert response.status_code == 409
     assert response.json() == {"detail": "Username already exists"}
 
 
 def test_login_successful(override_get_session, db_session):
-    
 
     create_user("myuser", "mypassword", db_session)
 
     response = client.post(
-                "/auth/login",
-                json={
-                    "username": "myuser",
-                    "password": "mypassword",
-                }
+        "/auth/login",
+        json={
+            "username": "myuser",
+            "password": "mypassword",
+        },
     )
-
 
     assert response.status_code == 200
     assert "access_token" in response.json()
@@ -97,13 +86,12 @@ def test_login_invalid_credentials(override_get_session, db_session):
     create_user("hithere", "byethere", db_session)
 
     response = client.post(
-                "auth/login",
-                json={
-                    "username": "hiithere",
-                    "password": "byethere",
-                }
+        "auth/login",
+        json={
+            "username": "hiithere",
+            "password": "byethere",
+        },
     )
-
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Invalid credentials"}

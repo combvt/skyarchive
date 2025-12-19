@@ -10,5 +10,6 @@ Base.metadata.create_all(engine)
 
 SessionLocal = sessionmaker(engine)
 
+
 def get_session():
     return SessionLocal()
