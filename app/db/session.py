@@ -12,4 +12,6 @@ SessionLocal = sessionmaker(engine)
 
 
 def get_session():
-    return SessionLocal()
+    session = SessionLocal()
+    yield session
+    session.close()
