@@ -1,0 +1,35 @@
+import httpx
+from datetime import datetime, timedelta, timezone
+from geopy.geocoders import Nominatim
+
+HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+
+geolocator = Nominatim(user_agent="SkyArchive")
+
+
+
+
+city = "Zarnesti"
+location = geolocator.geocode(city)
+
+coords = f"{location.longitude},{location.latitude},700" # pyright: ignore[reportAttributeAccessIssue
+
+
+params = {
+    "format": "json",
+    "COMMAND":499,
+    "MAKE_EPHEM": "YES",
+    "EPHEM_TYPE": "OBSERVER",
+    "CENTER": "coord@399",
+    "COORD_TYPE": "GEODETIC",
+    "SITE_COORD": f"'{coords}'",
+    "START_TIME": f"'{datetime.now(timezone.utc).strftime(r"%Y-%b-%d %H:%M")}'",
+    "STOP_TIME": f"'{(datetime.now(timezone.utc) + timedelta(minutes=1)).strftime(r"%Y-%b-%d %H:%M")}'",
+    "STEP_SIZE": "1m",
+    "TIME_TYPE": "UT",
+    "CAL_FORMAT": "CAL",
+
+}
+
+response = httpx.get(url=HORIZONS_URL, params=params)
+print (response.json())
