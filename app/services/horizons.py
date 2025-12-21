@@ -1,12 +1,21 @@
 import httpx
 from datetime import datetime, timedelta, timezone
 from geopy.geocoders import Nominatim
-
+from app.exceptions import InvalidLocationError
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
 
 geolocator = Nominatim(user_agent="SkyArchive")
 
 
+def get_coords(city_name: str) -> str:
+    location = geolocator.geocode(city_name)
+
+    if not location:
+        raise InvalidLocationError("Invalid location")
+    
+    coords = f"{location.longitude},{location.latitude},700" # pyright: ignore[reportAttributeAccessIssue]
+
+    return coords
 
 
 city = "Zarnesti"
