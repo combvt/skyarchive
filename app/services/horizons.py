@@ -18,27 +18,29 @@ def get_coords(city_name: str) -> str:
     return coords
 
 
-city = "Zarnesti"
-location = geolocator.geocode(city)
+def search_object(object_name: str, city_name: str) -> str:
+    coords = get_coords(city_name)
 
-coords = f"{location.longitude},{location.latitude},700" # pyright: ignore[reportAttributeAccessIssue
+    params = {
+        "format": "json",
+        "COMMAND":object_name,
+        "MAKE_EPHEM": "YES",
+        "EPHEM_TYPE": "OBSERVER",
+        "CENTER": "coord@399",
+        "COORD_TYPE": "GEODETIC",
+        "SITE_COORD": f"'{coords}'",
+        "START_TIME": f"'{datetime.now(timezone.utc).strftime(r"%Y-%b-%d %H:%M")}'",
+        "STOP_TIME": f"'{(datetime.now(timezone.utc) + timedelta(minutes=1)).strftime(r"%Y-%b-%d %H:%M")}'",
+        "STEP_SIZE": "1m",
+        "TIME_TYPE": "UT",
+        "CAL_FORMAT": "CAL",
+    }
+
+    response = httpx.get(url=HORIZONS_URL, params=params)
+    response.raise_for_status()
+
+    data = response.json()["result"]
+
+    return data
 
 
-params = {
-    "format": "json",
-    "COMMAND":499,
-    "MAKE_EPHEM": "YES",
-    "EPHEM_TYPE": "OBSERVER",
-    "CENTER": "coord@399",
-    "COORD_TYPE": "GEODETIC",
-    "SITE_COORD": f"'{coords}'",
-    "START_TIME": f"'{datetime.now(timezone.utc).strftime(r"%Y-%b-%d %H:%M")}'",
-    "STOP_TIME": f"'{(datetime.now(timezone.utc) + timedelta(minutes=1)).strftime(r"%Y-%b-%d %H:%M")}'",
-    "STEP_SIZE": "1m",
-    "TIME_TYPE": "UT",
-    "CAL_FORMAT": "CAL",
-
-}
-
-response = httpx.get(url=HORIZONS_URL, params=params)
-print (response.json())
