@@ -1,7 +1,8 @@
 import httpx
 from datetime import datetime, timedelta, timezone
 from geopy.geocoders import Nominatim
-from app.exceptions import InvalidLocationError
+from app.exceptions import InvalidLocationError, ObjectNotFoundError
+from app.exceptions import EphemerisDataMissing, UpstreamServiceError
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
 
 geolocator = Nominatim(user_agent="SkyArchive")
@@ -13,16 +14,16 @@ def get_coords(city_name: str) -> str:
     if not location:
         raise InvalidLocationError("Invalid location")
     
-    coords = f"{location.longitude},{location.latitude},700" # pyright: ignore[reportAttributeAccessIssue]
+    coords = f"{location.longitude},{location.latitude},0.005" # pyright: ignore[reportAttributeAccessIssue]
 
     return coords
 
 
-def search_object(object_name: str | int, coords: str) -> str:
+def search_object(object_name: str | int, coords: str) -> dict:
 
     params = {
         "format": "json",
-        "COMMAND":object_name,
+        "COMMAND":f"'{object_name}'",
         "MAKE_EPHEM": "YES",
         "EPHEM_TYPE": "OBSERVER",
         "CENTER": "coord@399",
