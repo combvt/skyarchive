@@ -18,8 +18,7 @@ def get_coords(city_name: str) -> str:
     return coords
 
 
-def search_object(object_name: str, city_name: str) -> str:
-    coords = get_coords(city_name)
+def search_object(object_name: str | int, coords: str) -> str:
 
     params = {
         "format": "json",
@@ -29,6 +28,7 @@ def search_object(object_name: str, city_name: str) -> str:
         "CENTER": "coord@399",
         "COORD_TYPE": "GEODETIC",
         "SITE_COORD": f"'{coords}'",
+        "OBJ_DATA": "YES",
         "START_TIME": f"'{datetime.now(timezone.utc).strftime(r"%Y-%b-%d %H:%M")}'",
         "STOP_TIME": f"'{(datetime.now(timezone.utc) + timedelta(minutes=1)).strftime(r"%Y-%b-%d %H:%M")}'",
         "STEP_SIZE": "1m",
@@ -39,7 +39,7 @@ def search_object(object_name: str, city_name: str) -> str:
     response = httpx.get(url=HORIZONS_URL, params=params)
     response.raise_for_status()
 
-    data = response.json()["result"]
+    data = response.json()
 
     return data
 
