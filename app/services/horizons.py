@@ -47,6 +47,39 @@ def search_object(object_name: str | int, coords: str) -> dict:
     return data
 
 
+def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
+    output_dict = {}
+
+    i = 0
+    output_dict["date"] = f"{ephemeris_data[i]} {ephemeris_data[i + 1]}"
+    i += 17
+    output_dict["azimuth_deg"] = ephemeris_data[i]
+    i += 1
+    output_dict["altitude_deg"] = ephemeris_data[i]
+    i += 11
+    output_dict["apparent_magnitude"] = ephemeris_data[i]
+    i += 1
+    output_dict["surface_brightness"] = ephemeris_data[i]
+    i += 1
+    output_dict["illumination_percent"] = ephemeris_data[i]
+    i += 3
+    output_dict["angular_diameter_arcsec"] = ephemeris_data[i]
+    i += 11
+    output_dict["sun_distance_au"] = ephemeris_data[i]
+    i += 2
+    output_dict["earth_distance_au"] = ephemeris_data[i]
+    i += 6
+    output_dict["solar_elong_deg"] = ephemeris_data[i]
+    i += 7
+    output_dict["constellation"] = ephemeris_data[i]
+
+    for key, value in output_dict.items():
+        if value == "n.a.":
+            output_dict[key] = None
+
+    return output_dict
+
+
 def parse_horizons_ephemeris(raw_data: dict) -> dict:
     data_dict = {}
     data_dict["source"] = raw_data.get("signature", {}).get("source", "Unknown source")
@@ -80,32 +113,8 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         clean_data = sliced_string.splitlines()[0].replace("*m", "")
         parsed_string = clean_data.replace("/T", "").replace("/L", "").split()
 
-        i = 0
-        data_dict["date"] = f"{parsed_string[i]} {parsed_string[i + 1]}"
-        i += 16
-        data_dict["azimuth_deg"] = parsed_string[i]
-        i += 1
-        data_dict["altitude_deg"] = parsed_string[i]
-        i += 11
-        data_dict["apparent_magnitude"] = parsed_string[i]
-        i += 1
-        data_dict["surface_brightness"] = parsed_string[i]
-        i += 1
-        data_dict["illumination_percent"] = parsed_string[i]
-        i += 3
-        data_dict["angular_diameter_arcsec"] = parsed_string[i]
-        i += 11
-        data_dict["sun_distance_au"] = parsed_string[i]
-        i += 2
-        data_dict["earth_distance_au"] = parsed_string[i]
-        i += 6
-        data_dict["solar_elong_deg"] = parsed_string[i]
-        i += 7
-        data_dict["constellation"] = parsed_string[i]
-
-        for key, value in data_dict.items():
-            if value == "n.a.":
-                data_dict[key] = None
+        output_data = _parse_single_match_ephemeris(parsed_string)
+        data_dict.update(output_data)
 
         return data_dict
     else:
@@ -113,5 +122,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     
 
 coords = "45.5,21.5,0.3"
-object = search_object(-31, coords)
+object = search_object(-92, coords)
 print(parse_horizons_ephemeris(object))
