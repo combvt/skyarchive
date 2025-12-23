@@ -94,17 +94,27 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
 
 
 
-    if data.find("No matches found.") != -1:
+    if data.find("No matches found.") != -1 or data.find("No such record") != -1:
         raise ObjectNotFoundError
+    elif data.find("No ephemeris for target") != -1:
+        raise EphemerisDataMissing
     elif data.find("Number of matches =") != -1 or data.find("Matching small-bodies:") != -1:
         return data
     elif start_index != -1 and end_index != -1:
-        name_id_string = data[name_start_index:name_end_index].strip()
-        first_slice_index = name_id_string.find("(")
-        second_slice_index = name_id_string.find(")")
-        object_name = name_id_string[len("Target body name:"):first_slice_index].strip()
-        object_id = name_id_string[first_slice_index + 1:second_slice_index].strip()
-        
+        raw_name_id_string = data[name_start_index:name_end_index].strip()
+        name_id_string = raw_name_id_string.split(":")[1]
+
+        if name_id_string.find("(spacecraft)") != -1:
+            first_slice_index = name_id_string.find(")")
+            object_name = name_id_string[:first_slice_index + 1].strip()
+            second_slice_index = name_id_string.find(")", len(object_name) + 1)
+            object_id = name_id_string[first_slice_index + 3:second_slice_index]
+        else:
+            first_slice_index = name_id_string.find("(")
+            second_slice_index = name_id_string.find(")")
+            object_name = name_id_string[:first_slice_index].strip()
+            object_id = name_id_string[first_slice_index + 1:second_slice_index].strip()
+
         data_dict["object_name"] = object_name
         data_dict["object_id"] = object_id
 
