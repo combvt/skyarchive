@@ -3,18 +3,20 @@ from datetime import datetime, timedelta, timezone
 from geopy.geocoders import Nominatim
 from app.exceptions import InvalidLocationError, ObjectNotFoundError
 from app.exceptions import EphemerisDataMissing, UpstreamServiceError
+
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+DEFAULT_ELEVATION_KM = 0.3
 
 geolocator = Nominatim(user_agent="SkyArchive")
 
 
-def get_coords(city_name: str) -> str:
+def get_coords(city_name: str, elevation: float | None = DEFAULT_ELEVATION_KM) -> str:
     location = geolocator.geocode(city_name)
 
     if not location:
         raise InvalidLocationError("Invalid location")
     
-    coords = f"{location.longitude},{location.latitude},0.005" # pyright: ignore[reportAttributeAccessIssue]
+    coords = f"{location.longitude},{location.latitude},{elevation}" # pyright: ignore[reportAttributeAccessIssue]
 
     return coords
 
