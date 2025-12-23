@@ -52,7 +52,7 @@ def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
 
     i = 0
     output_dict["date"] = f"{ephemeris_data[i]} {ephemeris_data[i + 1]}"
-    i += 17
+    i += 16
     output_dict["azimuth_deg"] = ephemeris_data[i]
     i += 1
     output_dict["altitude_deg"] = ephemeris_data[i]
@@ -80,6 +80,13 @@ def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
     return output_dict
 
 
+def _parse_multi_match_results(column_headers: list[str], data_values: list[str]) -> list[dict]:
+    parsed_list = []
+    raise NotImplementedError
+
+
+
+
 def parse_horizons_ephemeris(raw_data: dict) -> dict:
     data_dict = {}
     data_dict["source"] = raw_data.get("signature", {}).get("source", "Unknown source")
@@ -99,6 +106,17 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     elif data.find("No ephemeris for target") != -1:
         raise EphemerisDataMissing
     elif data.find("Number of matches =") != -1 or data.find("Matching small-bodies:") != -1:
+        if data.find("ID#") != -1:
+            h_row_first_slice_i = data.find("ID#")
+            h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
+            header_row = data[h_row_first_slice_i:h_row_second_slice_i]
+            print(header_row)         
+        elif data.find("Record #") != -1:
+            h_row_first_slice_i = data.find("Record #")
+            h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
+            header_row = data[h_row_first_slice_i:h_row_second_slice_i]
+        else:
+            raise UpstreamServiceError
         return data
     elif start_index != -1 and end_index != -1:
         raw_name_id_string = data[name_start_index:name_end_index].strip()
@@ -123,6 +141,7 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         clean_data = sliced_string.splitlines()[0].replace("*m", "")
         parsed_string = clean_data.replace("/T", "").replace("/L", "").split()
 
+
         output_data = _parse_single_match_ephemeris(parsed_string)
         data_dict.update(output_data)
 
@@ -131,6 +150,6 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         raise UpstreamServiceError
     
 
-coords = "45.5,21.5,0.3"
-object = search_object(-92, coords)
+coords = "55,21.5,0.3"
+object = search_object("mars", coords)
 print(parse_horizons_ephemeris(object))
