@@ -47,8 +47,6 @@ def search_object(object_name: str | int, coords: str) -> dict:
     return data
 
 
-data = search_object("1:", "51.5,0.1,0.005")
-
 def parse_horizons_ephemeris(raw_data: dict) -> dict:
     data_dict = {}
     data_dict["source"] = raw_data.get("signature", {}).get("source", "Unknown source")
@@ -66,7 +64,7 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     if data.find("No matches found.") != -1:
         raise ObjectNotFoundError
     elif data.find("Number of matches =") != -1 or data.find("Matching small-bodies:") != -1:
-              return data
+        return data
     elif start_index != -1 and end_index != -1:
         name_id_string = data[name_start_index:name_end_index].strip()
         first_slice_index = name_id_string.find("(")
@@ -105,11 +103,15 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         i += 7
         data_dict["constellation"] = parsed_string[i]
 
+        for key, value in data_dict.items():
+            if value == "n.a.":
+                data_dict[key] = None
+
         return data_dict
     else:
         raise UpstreamServiceError
     
 
-
-
-print(parse_horizons_ephemeris(data))
+coords = "45.5,21.5,0.3"
+object = search_object(-31, coords)
+print(parse_horizons_ephemeris(object))
