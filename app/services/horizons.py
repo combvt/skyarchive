@@ -62,7 +62,7 @@ def _slice_substring_into_list(substring : str, index_list: list[int]) -> list[s
     return new_list
             
 
-def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
+def _map_single_match_ephemeris(ephemeris_data: str) -> dict:
     output_dict = {}
 
     i = 0
@@ -95,7 +95,22 @@ def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
     return output_dict
 
 
-def _parse_multi_match_results(column_headers: list[str], data_values: list[str]) -> list[dict]:
+def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]) -> list[dict]:
+    parsed_list = []
+    
+    for row in data_rows_list:
+        raw_dict = {}
+        zipped_output = zip(column_list, row)
+
+        for key, value in zipped_output:
+            raw_dict[key] = value
+
+        parsed_list.append(raw_dict)
+
+    return parsed_list
+
+
+def _map_multi_match_results(column_headers: list[str], data_values: list[str]) -> list[dict]:
     parsed_list = []
     raise NotImplementedError
 
@@ -156,7 +171,10 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
             parsed_data_list.append(parsed_row)
 
                 
+        print(parsed_data_list)
+        output_list = _parse_multi_match_results(column_names_list, parsed_data_list)
 
+        print(output_list)
 
         
         # return data   
@@ -184,7 +202,7 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         parsed_string = clean_data.replace("/T", "").replace("/L", "").split()
 
 
-        output_data = _parse_single_match_ephemeris(parsed_string)
+        output_data = _map_single_match_ephemeris(parsed_string)
         data_dict.update(output_data)
 
         return data_dict
@@ -193,5 +211,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     
 
 coords = "55,21.5,0.3"
-object = search_object("mars", coords)
+object = search_object("MARS", coords)
 print(parse_horizons_ephemeris(object))
