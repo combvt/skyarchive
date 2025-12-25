@@ -139,19 +139,25 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
             if dashed_row[i] == "-" and dashed_row[i-1] == " ":
                 dash_index_list.append(i)
 
-        column_names_list = []
+        column_names_list = _slice_substring_into_list(header_row, dash_index_list)
 
-        for index in range(len(dash_index_list) - 1):
-            first_slice = dash_index_list[index]
-            second_slice = dash_index_list[index + 1]
-            sliced_string = header_row[first_slice:second_slice].strip()
-
-            column_names_list.append(sliced_string)
-
-        column_names_list.append(header_row[second_slice:].strip())
-        print(dash_index_list)
+        
         print(column_names_list)
         
+        data_row_first_slice = dashed_second_slice + 1
+
+        data_row_list = data[data_row_first_slice:].splitlines()
+        parsed_data_list = []
+
+        for row in data_row_list:
+            if row.strip() == "":
+                break
+            parsed_row = _slice_substring_into_list(row, dash_index_list)
+            parsed_data_list.append(parsed_row)
+
+                
+
+
         
         # return data   
     elif start_index != -1 and end_index != -1:
