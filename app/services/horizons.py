@@ -47,6 +47,21 @@ def search_object(object_name: str | int, coords: str) -> dict:
     return data
 
 
+def _slice_substring_into_list(substring : str, index_list: list[int]) -> list[str]:
+    new_list = []
+
+    for index in range(len(index_list) - 1):
+        first_slice = index_list[index]
+        second_slice = index_list[index + 1]
+        sliced_string = substring[first_slice:second_slice].strip()
+
+        new_list.append(sliced_string)
+
+    new_list.append(substring[second_slice:].strip())
+    
+    return new_list
+            
+
 def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
     output_dict = {}
 
@@ -172,5 +187,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     
 
 coords = "55,21.5,0.3"
-object = search_object("MARS", coords)
+object = search_object("mars", coords)
 print(parse_horizons_ephemeris(object))
