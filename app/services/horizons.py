@@ -52,7 +52,7 @@ def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
 
     i = 0
     output_dict["date"] = f"{ephemeris_data[i]} {ephemeris_data[i + 1]}"
-    i += 16
+    i += 17
     output_dict["azimuth_deg"] = ephemeris_data[i]
     i += 1
     output_dict["altitude_deg"] = ephemeris_data[i]
@@ -107,17 +107,38 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         raise EphemerisDataMissing
     elif data.find("Number of matches =") != -1 or data.find("Matching small-bodies:") != -1:
         if data.find("ID#") != -1:
-            h_row_first_slice_i = data.find("ID#")
-            h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
-            header_row = data[h_row_first_slice_i:h_row_second_slice_i]
-            print(header_row)         
+            h_row_first_slice_i = data.find("ID#")        
         elif data.find("Record #") != -1:
             h_row_first_slice_i = data.find("Record #")
-            h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
-            header_row = data[h_row_first_slice_i:h_row_second_slice_i]
-        else:
-            raise UpstreamServiceError
-        return data
+        
+        h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
+        header_row = data[h_row_first_slice_i:h_row_second_slice_i]
+        
+        dashed_first_slice = data.find("-", h_row_second_slice_i)
+        dashed_second_slice = data.find("\n", dashed_first_slice)
+
+        dashed_row = data[dashed_first_slice:dashed_second_slice]
+        
+        dash_index_list = [0]
+        for i in range(1, len(dashed_row)):
+            if dashed_row[i] == "-" and dashed_row[i-1] == " ":
+                dash_index_list.append(i)
+
+        column_names_list = []
+
+        for index in range(len(dash_index_list) - 1):
+            first_slice = dash_index_list[index]
+            second_slice = dash_index_list[index + 1]
+            sliced_string = header_row[first_slice:second_slice].strip()
+
+            column_names_list.append(sliced_string)
+
+        column_names_list.append(header_row[second_slice:].strip())
+        print(dash_index_list)
+        print(column_names_list)
+        
+        
+        # return data   
     elif start_index != -1 and end_index != -1:
         raw_name_id_string = data[name_start_index:name_end_index].strip()
         name_id_string = raw_name_id_string.split(":")[1]
@@ -151,5 +172,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     
 
 coords = "55,21.5,0.3"
-object = search_object("mars", coords)
+object = search_object("MARS", coords)
 print(parse_horizons_ephemeris(object))
