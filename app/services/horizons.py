@@ -58,7 +58,6 @@ def _slice_substring_into_list(substring : str, index_list: list[int]) -> list[s
         new_list.append(sliced_string)
 
     new_list.append(substring[second_slice:].strip())
-    
     return new_list
             
 
@@ -110,7 +109,7 @@ def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]
     return parsed_list
 
 
-def _map_multi_match_results(column_headers: list[str], data_values: list[str]) -> list[dict]:
+def _map_multi_match_results(data_list: list[dict]) -> list[dict]:
     parsed_list = []
     raise NotImplementedError
 
@@ -143,35 +142,44 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
         
         h_row_second_slice_i = data.find("\n", h_row_first_slice_i)
         header_row = data[h_row_first_slice_i:h_row_second_slice_i]
-        
+
+        raw_dashed_first_slice = data.find(" ", h_row_second_slice_i)
+        raw_dashed_second_slice = data.find("\n", raw_dashed_first_slice)
+        raw_dashed_row = data[raw_dashed_first_slice:raw_dashed_second_slice]
+        first_dash_index = raw_dashed_row.find("-")
+        offset_index = len(raw_dashed_row[:first_dash_index])
+
+
         dashed_first_slice = data.find("-", h_row_second_slice_i)
         dashed_second_slice = data.find("\n", dashed_first_slice)
-
         dashed_row = data[dashed_first_slice:dashed_second_slice]
-        
+
         dash_index_list = [0]
         for i in range(1, len(dashed_row)):
-            if dashed_row[i] == "-" and dashed_row[i-1] == " ":
+            if dashed_row[i] == "-" and dashed_row[i-1] != "-":
                 dash_index_list.append(i)
 
         column_names_list = _slice_substring_into_list(header_row, dash_index_list)
 
-        
-        print(column_names_list)
-        
         data_row_first_slice = dashed_second_slice + 1
 
         data_row_list = data[data_row_first_slice:].splitlines()
+
+
         parsed_data_list = []
+        
+
+
 
         for row in data_row_list:
             if row.strip() == "":
                 break
-            parsed_row = _slice_substring_into_list(row, dash_index_list)
+            offset_row = row[offset_index:]
+
+            parsed_row = _slice_substring_into_list(offset_row, dash_index_list)
             parsed_data_list.append(parsed_row)
 
                 
-        print(parsed_data_list)
         output_list = _parse_multi_match_results(column_names_list, parsed_data_list)
 
         print(output_list)
@@ -211,5 +219,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
     
 
 coords = "55,21.5,0.3"
-object = search_object("MARS", coords)
+object = search_object("81P", coords)
 print(parse_horizons_ephemeris(object))
