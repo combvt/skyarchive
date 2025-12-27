@@ -18,4 +18,8 @@ class HorizonsEphemerisResponse(BaseModel):
 
 
 class HorizonsMatchObject(BaseModel):
-    pass
+    object_name: str
+    object_id: str
+    epoch_year: int | None = None
+    designation: str | None = None
+    aliases: str | None = None
