@@ -110,13 +110,35 @@ def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]
 
 
 def _map_multi_match_results(data_list: list[dict]) -> list[dict]:
-    parsed_list = []
-    raise NotImplementedError
+    mapped_list = []
+    mapping_table = {
+        "Record #": "object_id",
+        "ID#": "object_id",
+        "Name": "object_name",
+        ">MATCH NAME<": "object_name",
+        "Epoch-yr": "epoch_year",
+        "Designation": "designation",
+        "Primary Desig": "designation",
+        ">MATCH DESIG<": "designation",
+        "IAU/aliases/other": "aliases",
+    }
+    
+    for data in data_list:
+        new_dict = {}
+        for key, value in data.items():
+            if key in mapping_table and mapping_table[key] not in new_dict:
+                new_dict[mapping_table[key]] = value
+
+        mapped_list.append(new_dict)
+
+    return mapped_list
 
 
 
 
-def parse_horizons_ephemeris(raw_data: dict) -> dict:
+
+
+def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
     data_dict = {}
     data_dict["source"] = raw_data.get("signature", {}).get("source", "Unknown source")
 
@@ -181,12 +203,11 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict:
 
                 
         output_list = _parse_multi_match_results(column_names_list, parsed_data_list)
-
-        print(output_list)
+        mapped_list = _map_multi_match_results(output_list)
 
         
-        # return data   
-    elif start_index != -1 and end_index != -1:
+        return mapped_list 
+    elif data.find("$$SOE") != -1 and end_index != -1:
         raw_name_id_string = data[name_start_index:name_end_index].strip()
         name_id_string = raw_name_id_string.split(":")[1]
 
