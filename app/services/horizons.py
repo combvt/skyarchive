@@ -3,7 +3,10 @@ from datetime import datetime, timedelta, timezone
 from geopy.geocoders import Nominatim
 from app.exceptions import InvalidLocationError, ObjectNotFoundError
 from app.exceptions import EphemerisDataMissing, UpstreamServiceError
-from ..parsers.horizons_mappings import multi_match_mapping_table as mapping_table
+from ..parsers.horizons_mappings import multi_match_mapping_table as m_mapping_table
+from ..parsers.horizons_grammar import horizons_grammar as grammar_map
+from ..parsers.horizons_mappings import single_match_mapping_table as s_mapping_table
+from ..parsers.horizons_grammar import DROP_TOKENS
 
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
 DEFAULT_ELEVATION_KM = 0.3
@@ -62,37 +65,26 @@ def _slice_substring_into_list(substring : str, index_list: list[int]) -> list[s
     return new_list
             
 
-def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
+def _parse_single_match_ephemeris(token_headers: list[str], data_list: list[str]) -> dict:
     output_dict = {}
-
     i = 0
-    output_dict["date"] = f"{ephemeris_data[i]} {ephemeris_data[i + 1]}"
-    i += 17
-    output_dict["azimuth_deg"] = ephemeris_data[i]
-    i += 1
-    output_dict["altitude_deg"] = ephemeris_data[i]
-    i += 11
-    output_dict["apparent_magnitude"] = ephemeris_data[i]
-    i += 1
-    output_dict["surface_brightness"] = ephemeris_data[i]
-    i += 1
-    output_dict["illumination_percent"] = ephemeris_data[i]
-    i += 3
-    output_dict["angular_diameter_arcsec"] = ephemeris_data[i]
-    i += 11
-    output_dict["sun_distance_au"] = ephemeris_data[i]
-    i += 2
-    output_dict["earth_distance_au"] = ephemeris_data[i]
-    i += 6
-    output_dict["solar_elong_deg"] = ephemeris_data[i]
-    i += 7
-    output_dict["constellation"] = ephemeris_data[i]
 
-    for key, value in output_dict.items():
-        if value == "n.a.":
-            output_dict[key] = None
+    grammar = dict(grammar_map)
+
+    for header in token_headers:
+        span = grammar.get(header, 1)
+        if i + span > len(data_list):
+            raise IndexError("Index out of bounds.")
+        
+        if header in s_mapping_table:
+            output_dict[header] = data_list[i:i + span]
+        
+        
+        i += span
 
     return output_dict
+
+    
 
 
 def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]) -> list[dict]:
@@ -116,8 +108,8 @@ def _map_multi_match_results(data_list: list[dict]) -> list[dict]:
     for data in data_list:
         new_dict = {}
         for key, value in data.items():
-            if key in mapping_table and mapping_table[key] not in new_dict:
-                new_dict[mapping_table[key]] = value
+            if key in m_mapping_table and m_mapping_table[key] not in new_dict:
+                new_dict[m_mapping_table[key]] = value
 
         mapped_list.append(new_dict)
 
