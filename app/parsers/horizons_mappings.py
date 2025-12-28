@@ -11,4 +11,15 @@ multi_match_mapping_table = {
     }
 
 
-single_match_mapping_table = {}
+single_match_mapping_table = {
+    "Date__(UT)__HR:MN": "date",
+    "Azi____(a-app)___Elev": ("azimuth_deg", "altitude_deg"),
+    "APmag": "apparent_magnitude",
+    "S-brt": "surface_brightness",
+    "Illu%": "illumination_percent",
+    "Ang-diam": "angular_diameter_arcsec",
+    "r": "sun_distance_au",
+    "delta": "earth_distance_au",
+    "S-T-O": "solar_elong_deg",
+    "Cnst": "constellation",
+}
