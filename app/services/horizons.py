@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from geopy.geocoders import Nominatim
 from app.exceptions import InvalidLocationError, ObjectNotFoundError
 from app.exceptions import EphemerisDataMissing, UpstreamServiceError
+from ..parsers.horizons_mappings import multi_match_mapping_table as mapping_table
 
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
 DEFAULT_ELEVATION_KM = 0.3
@@ -61,7 +62,7 @@ def _slice_substring_into_list(substring : str, index_list: list[int]) -> list[s
     return new_list
             
 
-def _map_single_match_ephemeris(ephemeris_data: str) -> dict:
+def _parse_single_match_ephemeris(ephemeris_data: str) -> dict:
     output_dict = {}
 
     i = 0
@@ -111,17 +112,6 @@ def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]
 
 def _map_multi_match_results(data_list: list[dict]) -> list[dict]:
     mapped_list = []
-    mapping_table = {
-        "Record #": "object_id",
-        "ID#": "object_id",
-        "Name": "object_name",
-        ">MATCH NAME<": "object_name",
-        "Epoch-yr": "epoch_year",
-        "Designation": "designation",
-        "Primary Desig": "designation",
-        ">MATCH DESIG<": "designation",
-        "IAU/aliases/other": "aliases",
-    }
     
     for data in data_list:
         new_dict = {}
@@ -171,7 +161,6 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
         first_dash_index = raw_dashed_row.find("-")
         offset_index = len(raw_dashed_row[:first_dash_index])
 
-
         dashed_first_slice = data.find("-", h_row_second_slice_i)
         dashed_second_slice = data.find("\n", dashed_first_slice)
         dashed_row = data[dashed_first_slice:dashed_second_slice]
@@ -187,12 +176,8 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
 
         data_row_list = data[data_row_first_slice:].splitlines()
 
-
         parsed_data_list = []
         
-
-
-
         for row in data_row_list:
             if row.strip() == "":
                 break
@@ -200,12 +185,10 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
 
             parsed_row = _slice_substring_into_list(offset_row, dash_index_list)
             parsed_data_list.append(parsed_row)
-
-                
+   
         output_list = _parse_multi_match_results(column_names_list, parsed_data_list)
         mapped_list = _map_multi_match_results(output_list)
 
-        
         return mapped_list 
     elif data.find("$$SOE") != -1 and end_index != -1:
         raw_name_id_string = data[name_start_index:name_end_index].strip()
@@ -225,13 +208,22 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
         data_dict["object_name"] = object_name
         data_dict["object_id"] = object_id
 
-        sliced_string = data[start_index:end_index].strip()
+        h_row_first_slice = data.find("Date__(UT)")
+        h_row_second_slice = data.find("\n", h_row_first_slice)
+        raw_header_string = data[h_row_first_slice:h_row_second_slice].replace("/r", "")
+        header_tokens = raw_header_string.split()
+        print(header_tokens)
+        print()
+        
 
-        clean_data = sliced_string.splitlines()[0].replace("*m", "")
+        data_string = data[start_index:end_index].strip()
+
+        clean_data = data_string.splitlines()[0].replace("*m", "")
         parsed_string = clean_data.replace("/T", "").replace("/L", "").split()
-
-
-        output_data = _map_single_match_ephemeris(parsed_string)
+        print(len(parsed_string))
+        print(parsed_string)
+        print()
+        output_data = _parse_single_match_ephemeris(parsed_string)
         data_dict.update(output_data)
 
         return data_dict
@@ -240,5 +232,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
     
 
 coords = "55,21.5,0.3"
-object = search_object("81P", coords)
+object = search_object("1:", coords)
 print(parse_horizons_ephemeris(object))
