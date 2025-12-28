@@ -85,6 +85,26 @@ def _parse_single_match_ephemeris(token_headers: list[str], data_list: list[str]
     return output_dict
 
     
+def _map_single_match_ephemeris(data: dict) -> dict:
+    output_dict = {}
+
+    for header, value in data.items():
+        if header in s_mapping_table:
+            if len(s_mapping_table[header]) > 1:
+                zipped = zip(s_mapping_table[header], value)
+                
+                for key, obj_data in zipped:
+                    output_dict[key] = obj_data
+            else:
+                key = s_mapping_table[header][0]
+                output_dict[key] = " ".join(value)
+
+    for key, value in output_dict.items():
+        if value == "n.a.":
+            output_dict[key] = None
+
+    return output_dict
+            
 
 
 def _parse_multi_match_results(column_list: list[str], data_rows_list: list[str]) -> list[dict]:
@@ -204,8 +224,7 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
         h_row_second_slice = data.find("\n", h_row_first_slice)
         raw_header_string = data[h_row_first_slice:h_row_second_slice].replace("/r", "")
         header_tokens = raw_header_string.split()
-        print(header_tokens)
-        print()
+        
         
 
         data_string = data[start_index:end_index].strip()
@@ -217,16 +236,17 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
                 continue
             data_list.append(data)
         
-        print(data_list)
-        print()
+        
         output_data = _parse_single_match_ephemeris(header_tokens, data_list)
-        data_dict.update(output_data)
+
+        mapped_dict = _map_single_match_ephemeris(output_data)
+        data_dict.update(mapped_dict)
 
         return data_dict
     else:
         raise UpstreamServiceError
     
 
-coords = "31.543,-67.324,0.3"
-object = search_object("27:", coords)
+coords = "120,-21.5,0.3"
+object = search_object("-31", coords)
 print(parse_horizons_ephemeris(object))
