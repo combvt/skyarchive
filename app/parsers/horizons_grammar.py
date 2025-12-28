@@ -79,6 +79,6 @@ horizons_grammar = [
     ("Lun_Sky_Brt", 1),
     ("sky_SNR", 1),
     ("UT1-UTC", 1),
-    
-    
 ]
+
+DROP_TOKENS = {"*m", "/T", "/L", "Cm", "C", "m", "Nm", "*"}

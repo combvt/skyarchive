@@ -218,12 +218,16 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
 
         data_string = data[start_index:end_index].strip()
 
-        clean_data = data_string.splitlines()[0].replace("*m", "")
-        parsed_string = clean_data.replace("/T", "").replace("/L", "").split()
-        print(len(parsed_string))
-        print(parsed_string)
+        clean_data = data_string.splitlines()[0].split()
+        data_list = []
+        for data in clean_data:
+            if data in DROP_TOKENS:
+                continue
+            data_list.append(data)
+        
+        print(data_list)
         print()
-        output_data = _parse_single_match_ephemeris(parsed_string)
+        output_data = _parse_single_match_ephemeris(header_tokens, data_list)
         data_dict.update(output_data)
 
         return data_dict
@@ -231,6 +235,6 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
         raise UpstreamServiceError
     
 
-coords = "55,21.5,0.3"
-object = search_object("1:", coords)
+coords = "31.543,-67.324,0.3"
+object = search_object("27:", coords)
 print(parse_horizons_ephemeris(object))
