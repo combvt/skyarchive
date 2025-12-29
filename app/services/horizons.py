@@ -153,12 +153,11 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
     name_end_index = data.find(r"{source:")
 
 
-
-    if data.find("No matches found.") != -1 or data.find("No such record") != -1:
+    if any(msg in data for msg in ("out of bounds", "No such record", "No matches found")):
         raise ObjectNotFoundError
     elif data.find("No ephemeris for target") != -1:
         raise EphemerisDataMissing
-    elif data.find("Number of matches =") != -1 or data.find("Matching small-bodies:") != -1:
+    elif any(msg in data for msg in ("Number of matches =", "Matching small-bodies:")):
         if data.find("ID#") != -1:
             h_row_first_slice_i = data.find("ID#")        
         elif data.find("Record #") != -1:
@@ -248,5 +247,5 @@ def parse_horizons_ephemeris(raw_data: dict) -> dict | list[dict]:
     
 
 coords = "120,-21.5,0.3"
-object = search_object("-31", coords)
+object = search_object("mars", coords)
 print(parse_horizons_ephemeris(object))
