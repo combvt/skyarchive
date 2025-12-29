@@ -9,6 +9,7 @@ from sqlalchemy import select
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException
 from jwt.exceptions import PyJWTError
+from app.db.session import get_session
 
 password_hash = PasswordHash.recommended()
 
@@ -54,7 +55,8 @@ def get_user_by_username(username: str, session_instance: Session) -> User | Non
 
 
 def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], session_instance: Session
+    token: Annotated[str, Depends(oauth2_scheme)],
+    session_instance: Session = Depends(get_session),
 ) -> User:
     try:
         user_id = validate_access_token(token)
