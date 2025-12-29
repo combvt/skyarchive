@@ -71,7 +71,7 @@ def test_login_successful(override_get_session, db_session):
 
     response = client.post(
         "/auth/login",
-        json={
+        data={
             "username": "myuser",
             "password": "mypassword",
         },
@@ -87,7 +87,7 @@ def test_login_invalid_credentials(override_get_session, db_session):
 
     response = client.post(
         "auth/login",
-        json={
+        data={
             "username": "hiithere",
             "password": "byethere",
         },
