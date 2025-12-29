@@ -14,12 +14,15 @@ DEFAULT_ELEVATION_KM = 0.3
 geolocator = Nominatim(user_agent="SkyArchive")
 
 
-def get_coords(city_name: str, elevation: float | None = DEFAULT_ELEVATION_KM) -> str:
+def get_coords(city_name: str, elevation: float | None = None) -> str:
     location = geolocator.geocode(city_name)
 
     if not location:
         raise InvalidLocationError("Invalid location")
     
+    if elevation is None:
+        elevation = DEFAULT_ELEVATION_KM
+
     coords = f"{location.longitude},{location.latitude},{elevation}" # pyright: ignore[reportAttributeAccessIssue]
 
     return coords
