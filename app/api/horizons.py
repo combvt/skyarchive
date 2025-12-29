@@ -8,13 +8,19 @@ from app.models.auth import User
 
 horizons_router = APIRouter(prefix="/horizons")
 
+
 @horizons_router.get("/search", status_code=200)
-def fetch_object(query: str | int, location: str, elevation: float | None = None, current_user: User = Depends(get_current_user)):
+def fetch_object(
+    query: str | int,
+    location: str,
+    elevation: float | None = None,
+    current_user: User = Depends(get_current_user),
+):
     try:
         coords = get_coords(location, elevation)
     except InvalidLocationError:
         raise HTTPException(400, detail="Invalid location")
-    
+
     output = search_object(object_name=query, coords=coords)
 
     try:
@@ -32,10 +38,11 @@ def fetch_object(query: str | int, location: str, elevation: float | None = None
         for item in data:
             new_item = HorizonsMatchObject(**item).model_dump(exclude_none=True)
             output_list.append(new_item)
-        
+
         return output_list
     elif isinstance(data, dict):
         return HorizonsEphemerisResponse(**data)
     else:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Unexpected Horizons response")
-
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, detail="Unexpected Horizons response"
+        )

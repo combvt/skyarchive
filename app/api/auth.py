@@ -25,7 +25,10 @@ def register_user(user_in: UserIn, current_session: Session = Depends(get_sessio
 
 
 @auth_router.post("/login", response_model=Token, status_code=200)
-def login_user(user_in: OAuth2PasswordRequestForm = Depends(), current_session: Session = Depends(get_session)):
+def login_user(
+    user_in: OAuth2PasswordRequestForm = Depends(),
+    current_session: Session = Depends(get_session),
+):
     user = auth.get_user_by_username(user_in.username, current_session)
 
     if not user:

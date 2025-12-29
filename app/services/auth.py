@@ -55,7 +55,8 @@ def get_user_by_username(username: str, session_instance: Session) -> User | Non
 
 
 def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], session_instance: Session = Depends(get_session)
+    token: Annotated[str, Depends(oauth2_scheme)],
+    session_instance: Session = Depends(get_session),
 ) -> User:
     try:
         user_id = validate_access_token(token)

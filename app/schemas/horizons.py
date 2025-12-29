@@ -8,7 +8,7 @@ class HorizonsEphemerisResponse(BaseModel):
     azimuth_deg: float | None = None
     altitude_deg: float | None = None
     apparent_magnitude: float | None = None
-    surface_brightness: float |None = None
+    surface_brightness: float | None = None
     illumination_percent: float | None = None
     angular_diameter_arcsec: float | None = None
     sun_distance_au: float | None = None
