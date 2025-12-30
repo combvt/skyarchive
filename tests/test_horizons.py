@@ -1,5 +1,5 @@
 from app.main import app
-
+from app.services.horizons import parse_horizons_ephemeris
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -64,6 +64,11 @@ def mock_search_object(monkeypatch):
         return {"source": "fake", "result": "Ephemeris data for x object \n\n 2025-Dec-25 15:58 21.2 36.4 213231"}
     monkeypatch.setattr("app.api.horizons.search_object", fake_search_object)
 
+@pytest.fixture
+def mock_get_coords(monkeypatch):
+    def fake_get_coords(location: str, elevation: str | None = None):
+        return "21.6,55,0.3"
+    monkeypatch.setattr("app.api.horizons.get_coords", fake_get_coords)
 
 def test_horizons_search_requires_auth(override_get_session):
     
@@ -78,7 +83,7 @@ def test_horizons_search_requires_auth(override_get_session):
     assert response.status_code == 401
     assert response.json() == {"detail": "Could not validate credentials"}
 
-def test_horizons_search_returns_single_ephemeris(override_get_session, auth_header, monkeypatch, mock_search_object):
+def test_horizons_search_returns_single_ephemeris(override_get_session, auth_header, monkeypatch, mock_search_object, mock_get_coords):
     
     def fake_parse_horizons_ephemeris(raw_data: dict):
         return {
@@ -114,7 +119,7 @@ def test_horizons_search_returns_single_ephemeris(override_get_session, auth_hea
     assert data["constellation"] == "Sgr"
 
 
-def test_horizons_search_multi_match_response(override_get_session, mock_search_object, auth_header, monkeypatch):
+def test_horizons_search_multi_match_response(override_get_session, mock_search_object, mock_get_coords, auth_header, monkeypatch):
     def fake_parse_horizons_ephemeris(raw_data: dict):
         return [
             {
@@ -154,7 +159,7 @@ def test_horizons_search_multi_match_response(override_get_session, mock_search_
     assert data[1]["object_name"] == "Mars"
     assert "aliases" in data[2]
     
-def test_horizons_search_object_not_found_returns_404(override_get_session, auth_header, monkeypatch, mock_search_object):
+def test_horizons_search_object_not_found_returns_404(override_get_session, auth_header, monkeypatch, mock_search_object, mock_get_coords):
     def fake_parse_horizons_ephemeris(raw_data: dict):
         raise ObjectNotFoundError
     
@@ -169,7 +174,7 @@ def test_horizons_search_object_not_found_returns_404(override_get_session, auth
     assert response.status_code == 404
     assert response.json() == {"detail": "Object not found"}
 
-def test_horizons_search_ephemeris_data_missing_returns_404(override_get_session, auth_header, monkeypatch, mock_search_object):
+def test_horizons_search_ephemeris_data_missing_returns_404(override_get_session, auth_header, monkeypatch, mock_search_object, mock_get_coords):
     def fake_parse_horizons_ephemeris(raw_data: dict):
         raise EphemerisDataMissing
     
@@ -184,7 +189,7 @@ def test_horizons_search_ephemeris_data_missing_returns_404(override_get_session
     assert response.status_code == 404
     assert response.json() == {"detail": "No ephemeris data available for this object"}
 
-def test_horizons_search_upstream_service_error_returns_503(override_get_session, auth_header, monkeypatch, mock_search_object):
+def test_horizons_search_upstream_service_error_returns_503(override_get_session, auth_header, monkeypatch, mock_search_object, mock_get_coords):
     def fake_parse_horizons_ephemeris(raw_data: dict):
         raise UpstreamServiceError
     
@@ -214,6 +219,25 @@ def test_horizons_search_invalid_location_returns_400(override_get_session, auth
     assert response.status_code == 400
     assert response.json() == {"detail": "Invalid location"}
 
+def test_single_match_ephemeris_parser():
+    raw_data = {
+        "result": """
+        Target body name: Mars (499) \n
+        Date__(UT)__HR:MN     R.A._____(ICRF)_____DEC  R.A.__(a-apparent)__DEC  dRA*cosD d(DEC)/dt  Azi____(a-app)___Elev  dAZ*cosE d(ELV)/dt  X_(sat-primary)_Y SatPANG  L_Ap_Sid_Time  a-mass mag_ex    APmag   S-brt      Illu%  Def_illu   ang-sep/v  Ang-diam  ObsSub-LON ObsSub-LAT  SunSub-LON SunSub-LAT  SN.ang   SN.dist    NP.ang   NP.dist  hEcl-Lon hEcl-Lat                r        rdot             delta      deldot  1-way_down_LT       VmagSn      VmagOb     S-O-T /r     S-T-O   T-O-M/MN_Illu%     O-P-T    PsAng   PsAMV      PlAng  Cnst        TDB-UT     ObsEcLon    ObsEcLat  N.Pole-RA  N.Pole-DC      GlxLon     GlxLat  L_Ap_SOL_Time  399_ins_LT  RA_3sigma DEC_3sigma  SMAA_3sig SMIA_3sig    Theta Area_3sig  POS_3sigma  RNG_3sigma RNGRT_3sig   DOP_S_3sig  DOP_X_3sig  RT_delay_3sig  Tru_Anom  L_Ap_Hour_Ang       phi  PAB-LON  PAB-LAT  App_Lon_Sun  RA_(ICRF-a-apparnt)_DEC  I_dRA*cosD I_d(DEC)/dt  Sky_motion  Sky_mot_PA  RelVel-ANG  Lun_Sky_Brt  sky_SNR   UT1-UTC\n $$SOE
+        2025-Dec-24 13:35 *m  18 29 09.23 -24 06 38.9  18 30 43.42 -24 05 40.2  113.8230  5.400805  241.884725   4.515307    360.13   -738.84  14604.74 -2481.00 100.552  23 28 20.4496  10.858  2.758    1.091   3.770   99.94014    0.0023  14775.52/*  3.876377  115.612958  -5.463741  112.879016  -6.152040  278.76      0.09   22.9663    -1.918  279.4003  -1.4137   1.436626158701  -1.8934692  2.41599313076047  -0.7162227    20.09320217   25.5498277  55.4687733    4.1043 /T    2.8096    46.3/ 18.1776  173.0861   98.926 268.300   -0.50850   Sgr     69.183708  277.0089569  -0.8429883  317.65322   52.87035    8.955257  -6.161004  17 15 17.9731    0.000354       n.a.       n.a.       n.a.      n.a.     n.a.      n.a.        n.a.        n.a.       n.a.         n.a.        n.a.           n.a.  303.3081   04 57 37.027    2.8040 278.0227  -1.1270  194.4077072  18 29 07.72 -24 06 40.1    113.8375    5.086793   1.8991841   87.283401   -0.745567         n.a.     n.a.   0.07730
+        $$EOE
+    """
+    }
+    
+    data = parse_horizons_ephemeris(raw_data)
+    assert isinstance(data, dict)
+    assert data["object_name"] == "Mars"
+    assert data["object_id"] == "499"
+    assert data["date"] == "2025-Dec-24 13:35"
+    assert data["azimuth_deg"] == "241.884725"
+    assert data["constellation"] == "Sgr"
+    assert data["angular_diameter_arcsec"] == "3.876377"
+    assert "*m" not in data
 
 #TODO add test for single match parser, assert token count ==
 # len(data), correct slicing (give it a real string)
