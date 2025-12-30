@@ -115,13 +115,50 @@ def test_horizons_search_returns_single_ephemeris(override_get_session, auth_hea
 
 
 def test_horizons_search_multi_match_response(override_get_session, mock_search_object, auth_header, monkeypatch):
+    def fake_parse_horizons_ephemeris(raw_data: dict):
+        return [
+            {
+                "object_name": "Mars Barycenter",
+                "object_id": "4",
+                "designation": None,
+                "aliases": None
+            },
+            {
+                "object_name": "Mars",
+                "object_id": "499",
+                "designation": None,
+                "aliases": None
+            },
+            {
+                "object_name": "Mars Orbiter Mission (spacecraft)",
+                "object_id": "-3",
+                "designation": "2013-060A",
+                "aliases": "MOM Mangalyaan"
+            },
+        ]
+    
+    monkeypatch.setattr("app.api.horizons.parse_horizons_ephemeris", fake_parse_horizons_ephemeris)
+
+    response = client.get("/horizons/search", params={
+        "query": "mars",
+        "location": "Honolulu",
+    },
+    headers=auth_header)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert isinstance(data[1], dict)
+    assert len(data) == 3
+    assert "designation" not in data[0]
+    assert data[1]["object_name"] == "Mars"
+    assert "aliases" in data[2]
     
 #TODO  add test for each of the exceptions raised in the endpoint
 # ObjectNotFoundError, EphemerisDataMissing, UpstreamServiceError,
 # InvalidLocationError and assert accordingly
 #TODO maybe add fixture to stub search_object if its being called
 # in every test.
-#TODO add test for multi-match response, assert list type,
-#list length, items, None fields don't exist.
+
 #TODO add test for single match parser, assert token count ==
 # len(data), correct slicing (give it a real string)
