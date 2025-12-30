@@ -58,6 +58,12 @@ def auth_header(test_user, override_get_session):
 
     return {"Authorization": f"Bearer {token}"}
 
+@pytest.fixture
+def mock_search_object(monkeypatch):
+    def fake_search_object(object_name: str | int, coords: str):
+        return {"source": "fake", "result": "Ephemeris data for x object \n\n 2025-Dec-25 15:58 21.2 36.4 213231"}
+    monkeypatch.setattr("app.api.horizons.search_object", fake_search_object)
+
 
 def test_horizons_search_requires_auth(override_get_session):
     
@@ -72,12 +78,7 @@ def test_horizons_search_requires_auth(override_get_session):
     assert response.status_code == 401
     assert response.json() == {"detail": "Could not validate credentials"}
 
-def test_horizons_search_returns_single_ephemeris(override_get_session, auth_header, monkeypatch):
-    def fake_search_object(object_name: str | int, coords: str):
-        return {
-            "source": "fake",
-            "result": "Ephemeris data for x object \n\n 2025-Dec-25 15:58 21.2 36.4 213231" 
-        }
+def test_horizons_search_returns_single_ephemeris(override_get_session, auth_header, monkeypatch, mock_search_object):
     
     def fake_parse_horizons_ephemeris(raw_data: dict):
         return {
@@ -96,7 +97,6 @@ def test_horizons_search_returns_single_ephemeris(override_get_session, auth_hea
             "constellation": "Sgr"
         }
     
-    monkeypatch.setattr("app.api.horizons.search_object", fake_search_object)
     monkeypatch.setattr("app.api.horizons.parse_horizons_ephemeris", fake_parse_horizons_ephemeris)
 
     response = client.get("/horizons/search", params={
@@ -112,6 +112,9 @@ def test_horizons_search_returns_single_ephemeris(override_get_session, auth_hea
     assert data["azimuth_deg"] == 239.356858
     assert data["illumination_percent"] == 99.97094
     assert data["constellation"] == "Sgr"
+
+
+def test_horizons_search_multi_match_response(override_get_session, mock_search_object, auth_header, monkeypatch):
     
 #TODO  add test for each of the exceptions raised in the endpoint
 # ObjectNotFoundError, EphemerisDataMissing, UpstreamServiceError,
