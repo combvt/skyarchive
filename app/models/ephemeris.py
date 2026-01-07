@@ -2,7 +2,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from datetime import datetime, timezone
 from app.db.base import Base
-
+from app.models.auth import User
 
 class Ephemeris(Base):
     __tablename__ = "ephemerides"
@@ -26,5 +26,6 @@ class Ephemeris(Base):
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    user: Mapped[User] = relationship(back_populates="ephemerides")
 
     

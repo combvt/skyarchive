@@ -1,8 +1,9 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
 from datetime import datetime, timezone
 from app.db.base import Base
+from app.models.ephemeris import Ephemeris
 
 
 class User(Base):
@@ -16,3 +17,5 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(timezone.utc), nullable=False
     )
+
+    ephemerides: Mapped[list[Ephemeris]] = relationship(back_populates="user")
