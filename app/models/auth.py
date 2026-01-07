@@ -3,7 +3,11 @@ from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
 from datetime import datetime, timezone
 from app.db.base import Base
-from app.models.ephemeris import Ephemeris
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .ephemeris import Ephemeris
+
 
 
 class User(Base):
@@ -18,4 +22,4 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
-    ephemerides: Mapped[list[Ephemeris]] = relationship(back_populates="user")
+    ephemerides: Mapped[list["Ephemeris"]] = relationship(back_populates="user")

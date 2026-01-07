@@ -24,3 +24,9 @@ class HorizonsMatchObject(BaseModel):
     epoch_year: int | None = None
     designation: str | None = None
     aliases: str | None = None
+
+
+class EphemerisCreate(BaseModel):
+    object_id : str | int
+    location: str
+    elevation: float | None = None
