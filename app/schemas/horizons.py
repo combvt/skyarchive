@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 
+
 class HorizonsEphemerisResponse(BaseModel):
     object_name: str
     object_id: str
